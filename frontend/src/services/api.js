@@ -53,6 +53,10 @@ export const projectsAPI = {
   updateProgress: (id, progress) =>
     axios.patch(`${API_BASE}/projects/${id}/progress`, { progress }),
 
+  // Delete
+  deleteProject: (id) =>
+    axios.delete(`${API_BASE}/projects/${id}`),
+
   // Teachers list
   getTeachers: () =>
     axios.get(`${API_BASE}/auth/teachers`),

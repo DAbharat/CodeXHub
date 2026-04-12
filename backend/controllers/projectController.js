@@ -355,3 +355,54 @@ export const downloadSynopsis = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// @desc    Delete project
+// @route   DELETE /api/projects/:id
+// @access  Private/Student (who requested the project) or Teacher (guide)
+export const deleteProject = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Check if user is a student in this project or the guide
+    const isStudent = project.students.some(
+      s => s.toString() === req.user._id.toString()
+    );
+    const isGuide = project.guide.toString() === req.user._id.toString();
+
+    if (!isStudent && !isGuide) {
+      return res.status(403).json({ message: 'Not authorized to delete this project' });
+    }
+
+    // Delete synopsis file if it exists
+    if (project.synopsisFile) {
+      const filePath = path.join(__dirname, '../../uploads', project.synopsisFile);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Remove project from all students' projects array
+    await User.updateMany(
+      { _id: { $in: project.students } },
+      { $pull: { projects: project._id } }
+    );
+
+    // Remove project from guide's projects array (if guide has projects array)
+    await User.findByIdAndUpdate(
+      project.guide,
+      { $pull: { projects: project._id } }
+    );
+
+    // Delete the project
+    await Project.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    console.error('Delete project error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

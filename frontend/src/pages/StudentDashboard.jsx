@@ -74,6 +74,16 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleDeleteProject = async (projectId) => {
+    try {
+      await projectsAPI.deleteProject(projectId);
+      toast.success('Project deleted successfully!');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete project');
+    }
+  };
+
   // Get available teachers
   const getAvailableTeachers = () => {
     return teachers;
@@ -176,7 +186,7 @@ const StudentDashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <ProjectCard key={project._id} project={project} role="student" />
+              <ProjectCard key={project._id} project={project} role="student" onDelete={handleDeleteProject} />
             ))}
           </div>
         )}

@@ -11,6 +11,7 @@ import {
   completeProject,
   uploadSynopsis,
   downloadSynopsis,
+  deleteProject,
 } from '../controllers/projectController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
@@ -23,6 +24,7 @@ router.get('/teacher', protect, authorize('teacher'), getTeacherProjects);
 router.get('/:id', protect, getProjectById);
 router.post('/:id/approve', protect, authorize('teacher'), approveProject);
 router.post('/:id/reject', protect, authorize('teacher'), rejectProject);
+router.delete('/:id', protect, deleteProject);
 router.patch('/:id/progress', protect, updateProjectProgress);
 router.post('/:id/students', protect, authorize('teacher'), addStudentToProject);
 router.post('/:id/complete', protect, authorize('teacher'), completeProject);

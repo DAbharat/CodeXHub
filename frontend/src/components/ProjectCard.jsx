@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Calendar, ArrowRight } from 'lucide-react';
+import { Users, Calendar, ArrowRight, Trash2 } from 'lucide-react';
 
-const ProjectCard = ({ project, role }) => {
+const ProjectCard = ({ project, role, onDelete }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -15,6 +18,13 @@ const ProjectCard = ({ project, role }) => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleDeleteClick = async () => {
+    if (onDelete) {
+      await onDelete(project._id);
+    }
+    setShowDeleteConfirm(false);
   };
 
   const studentCount = Array.isArray(project.students) ? project.students.length : 0;
@@ -72,6 +82,43 @@ const ProjectCard = ({ project, role }) => {
         View Details
         <ArrowRight className="h-4 w-4 ml-2" />
       </Link>
+
+      {/* Delete Button */}
+      {role === 'student' && (
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="mt-3 w-full flex items-center justify-center px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors duration-200"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete Project
+        </button>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Project?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{project.title}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteClick}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
