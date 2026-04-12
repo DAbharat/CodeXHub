@@ -12,6 +12,7 @@ const Profile = () => {
     email: '',
     semester: '',
     department: '',
+    rollNo: '',
     password: '',
     confirmPassword: '',
   });
@@ -24,6 +25,7 @@ const Profile = () => {
         email: user.email || '',
         semester: user.semester || '',
         department: user.department || '',
+        rollNo: user.rollNo || '',
         password: '',
         confirmPassword: '',
       });
@@ -52,6 +54,7 @@ const Profile = () => {
     };
 
     if (user.role === 'student') {
+      payload.rollNo = formData.rollNo;
       payload.semester = formData.semester;
     }
 
@@ -128,6 +131,21 @@ const Profile = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {user?.role === 'student' && (
+              <label className="block">
+                <span className="text-gray-700 font-medium">Roll No.</span>
+                <input
+                  type="text"
+                  name="rollNo"
+                  value={formData.rollNo}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="CSE23/069"
+                  required
+                />
+              </label>
+            )}
+
             {user?.role === 'student' && (
               <label className="block">
                 <span className="text-gray-700 font-medium">Semester</span>

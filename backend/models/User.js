@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema({
     min: 1,
     max: 8,
   },
+  rollNo: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true,
+  },
   department: {
     type: String,
   },

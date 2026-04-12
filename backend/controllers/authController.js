@@ -6,13 +6,20 @@ import generateToken from '../utils/generateToken.js';
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, semester, department } = req.body;
+    const { name, email, password, role, semester, department, rollNo } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
+    }
+
+    if (role === 'student') {
+      const rollNumberExists = await User.findOne({ rollNo });
+      if (rollNumberExists) {
+        return res.status(400).json({ message: 'Roll number is already in use' });
+      }
     }
 
     // Validate role
@@ -28,6 +35,9 @@ export const register = async (req, res) => {
       if (!department) {
         return res.status(400).json({ message: 'Department is required for students' });
       }
+      if (!rollNo) {
+        return res.status(400).json({ message: 'Roll number is required for students' });
+      }
     }
 
     // Create user
@@ -38,6 +48,7 @@ export const register = async (req, res) => {
       role,
       semester: role === 'student' ? semester : undefined,
       department: role === 'student' ? department : undefined,
+      rollNo: role === 'student' ? rollNo : undefined,
     });
 
     if (user) {
@@ -48,6 +59,7 @@ export const register = async (req, res) => {
         role: user.role,
         semester: user.semester,
         department: user.department,
+        rollNo: user.rollNo,
         token: generateToken(user._id),
       });
     } else {
@@ -77,6 +89,7 @@ export const login = async (req, res) => {
         role: user.role,
         semester: user.semester,
         department: user.department,
+        rollNo: user.rollNo,
         token: generateToken(user._id),
       });
     } else {
@@ -107,7 +120,7 @@ export const getMe = async (req, res) => {
 // @access  Private
 export const updateProfile = async (req, res) => {
   try {
-    const { name, email, semester, department, password } = req.body;
+    const { name, email, semester, department, password, rollNo } = req.body;
     const user = await User.findById(req.user._id).select('+password');
 
     if (!user) {
@@ -126,6 +139,16 @@ export const updateProfile = async (req, res) => {
     if (password) user.password = password;
 
     if (user.role === 'student') {
+      if (rollNo !== undefined) {
+        if (!rollNo) {
+          return res.status(400).json({ message: 'Roll number is required for students' });
+        }
+        const existingRollNo = await User.findOne({ rollNo });
+        if (existingRollNo && existingRollNo._id.toString() !== user._id.toString()) {
+          return res.status(400).json({ message: 'Roll number is already in use' });
+        }
+        user.rollNo = rollNo;
+      }
       if (semester !== undefined) {
         const parsedSemester = parseInt(semester, 10);
         if (Number.isNaN(parsedSemester) || parsedSemester < 1 || parsedSemester > 8) {
@@ -151,6 +174,7 @@ export const updateProfile = async (req, res) => {
       role: user.role,
       semester: user.semester,
       department: user.department,
+      rollNo: user.rollNo,
     });
   } catch (error) {
     console.error('Update profile error:', error);

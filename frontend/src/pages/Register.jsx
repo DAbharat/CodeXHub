@@ -15,6 +15,7 @@ const Register = () => {
     role: 'student',
     semester: '',
     department: '',
+    rollNo: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -142,6 +143,20 @@ const Register = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Roll No.
+                    </label>
+                    <input
+                      type="text"
+                      name="rollNo"
+                      value={formData.rollNo}
+                      onChange={handleChange}
+                      className="input-field"
+                      placeholder="CSE23/069"
+                      required={formData.role === 'student'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Semester
                     </label>
                     <select
@@ -159,20 +174,20 @@ const Register = () => {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department
-                    </label>
-                    <input
-                      type="text"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      className="input-field"
-                      placeholder="CSE"
-                      required={formData.role === 'student'}
-                    />
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Department
+                  </label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="input-field"
+                    placeholder="CSE"
+                    required={formData.role === 'student'}
+                  />
                 </div>
               </>
             )}
