@@ -1,5 +1,11 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // @desc    Submit project request
 // @route   POST /api/projects/request
@@ -257,6 +263,95 @@ export const completeProject = async (req, res) => {
     res.json(project);
   } catch (error) {
     console.error('Complete project error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Upload synopsis file
+// @route   POST /api/projects/:id/synopsis
+// @access  Private/Student
+export const uploadSynopsis = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Check if user is a student in this project
+    const isStudent = project.students.some(
+      s => s.toString() === req.user._id.toString()
+    );
+
+    if (!isStudent) {
+      return res.status(403).json({ message: 'Not authorized to upload synopsis for this project' });
+    }
+
+    // Check if project is approved
+    if (project.status !== 'approved') {
+      return res.status(400).json({ message: 'Project must be approved before uploading synopsis' });
+    }
+
+    // Check if synopsis already uploaded
+    if (project.synopsisFile) {
+      return res.status(400).json({ message: 'Synopsis already uploaded for this project' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    project.synopsisFile = req.file.filename;
+    project.synopsisOriginalName = req.file.originalname;
+    await project.save();
+
+    res.json({
+      message: 'Synopsis uploaded successfully',
+      project: {
+        _id: project._id,
+        synopsisFile: project.synopsisFile,
+        synopsisOriginalName: project.synopsisOriginalName,
+      },
+    });
+  } catch (error) {
+    console.error('Upload synopsis error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Download synopsis file
+// @route   GET /api/projects/:id/synopsis/download
+// @access  Private
+export const downloadSynopsis = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id).populate('guide', 'name email');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const isStudent = project.students.some(
+      s => s.toString() === req.user._id.toString()
+    );
+    const isGuide = project.guide && project.guide._id.toString() === req.user._id.toString();
+
+    if (!isStudent && !isGuide) {
+      return res.status(403).json({ message: 'Not authorized to download this synopsis' });
+    }
+
+    if (!project.synopsisFile) {
+      return res.status(404).json({ message: 'Synopsis not uploaded' });
+    }
+
+    const filePath = path.join(__dirname, '../../uploads', project.synopsisFile);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Synopsis file not found' });
+    }
+
+    return res.download(filePath, project.synopsisOriginalName || project.synopsisFile);
+  } catch (error) {
+    console.error('Download synopsis error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -37,6 +37,18 @@ export const projectsAPI = {
   completeProject: (id) =>
     axios.post(`${API_BASE}/projects/${id}/complete`),
 
+  // Student actions
+  uploadSynopsis: (projectId, formData) =>
+    axios.post(`${API_BASE}/projects/${projectId}/synopsis`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  downloadSynopsis: (projectId) =>
+    axios.get(`${API_BASE}/projects/${projectId}/synopsis/download`, {
+      responseType: 'blob',
+    }),
+
   // Progress
   updateProgress: (id, progress) =>
     axios.patch(`${API_BASE}/projects/${id}/progress`, { progress }),

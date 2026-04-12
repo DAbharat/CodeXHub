@@ -9,8 +9,11 @@ import {
   updateProjectProgress,
   addStudentToProject,
   completeProject,
+  uploadSynopsis,
+  downloadSynopsis,
 } from '../controllers/projectController.js';
 import { protect, authorize } from '../middleware/auth.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -23,5 +26,7 @@ router.post('/:id/reject', protect, authorize('teacher'), rejectProject);
 router.patch('/:id/progress', protect, updateProjectProgress);
 router.post('/:id/students', protect, authorize('teacher'), addStudentToProject);
 router.post('/:id/complete', protect, authorize('teacher'), completeProject);
+router.post('/:id/synopsis', protect, authorize('student'), upload.single('synopsis'), uploadSynopsis);
+router.get('/:id/synopsis/download', protect, downloadSynopsis);
 
 export default router;

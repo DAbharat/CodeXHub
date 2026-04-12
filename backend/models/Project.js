@@ -42,6 +42,9 @@ const projectSchema = new mongoose.Schema({
   synopsisFile: {
     type: String,
   },
+  synopsisOriginalName: {
+    type: String,
+  },
   startDate: {
     type: Date,
   },

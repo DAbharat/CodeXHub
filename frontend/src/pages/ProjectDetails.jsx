@@ -13,6 +13,7 @@ import {
   Clock,
   ArrowLeft,
   Send,
+  Upload,
 } from 'lucide-react';
 
 const ProjectDetails = () => {
@@ -23,6 +24,8 @@ const ProjectDetails = () => {
   const [wprs, setWprs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showWPRModal, setShowWPRModal] = useState(false);
+  const [showSynopsisModal, setShowSynopsisModal] = useState(false);
+  const [synopsisFile, setSynopsisFile] = useState(null);
   const [newWPR, setNewWPR] = useState({
     weekNumber: '',
     progressDescription: '',
@@ -82,6 +85,74 @@ const ProjectDetails = () => {
     }
   };
 
+  const handleDownloadSynopsis = async () => {
+    try {
+      const response = await projectsAPI.downloadSynopsis(id);
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = project.synopsisOriginalName || 'synopsis';
+
+      if (contentDisposition) {
+        const matches = /filename\*=UTF-8''(.+)|filename="?([^";]+)"?/.exec(contentDisposition);
+        if (matches) {
+          filename = decodeURIComponent(matches[1] || matches[2]);
+        }
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to download synopsis');
+    }
+  };
+
+  const handleSynopsisUpload = async (e) => {
+    e.preventDefault();
+
+    if (!synopsisFile) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('synopsis', synopsisFile);
+
+    try {
+      await projectsAPI.uploadSynopsis(id, formData);
+      toast.success('Synopsis uploaded successfully!');
+      setShowSynopsisModal(false);
+      setSynopsisFile(null);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to upload synopsis');
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please select a PDF, DOC, DOCX, or TXT file');
+        return;
+      }
+
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      setSynopsisFile(file);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -122,6 +193,12 @@ const ProjectDetails = () => {
     isStudent &&
     project.students?.some((s) => s._id === user._id) &&
     project.status === 'approved';
+
+  const canUploadSynopsis =
+    isStudent &&
+    project.students?.some((s) => s._id === user._id) &&
+    project.status === 'approved' &&
+    !project.synopsisFile;
 
   const isGuide = isTeacher && project.guide?._id === user._id;
 
@@ -191,6 +268,26 @@ const ProjectDetails = () => {
           </div>
         </div>
 
+        {/* Synopsis Section */}
+        {project.synopsisFile && (
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-blue-800">
+                <FileText className="h-5 w-5 mr-2" />
+                <span className="font-medium">Synopsis Uploaded</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadSynopsis}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded text-sm transition-colors flex items-center"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-6 flex space-x-3">
           {canSubmitWPR && (
@@ -200,6 +297,15 @@ const ProjectDetails = () => {
             >
               <Plus className="h-4 w-4 mr-2" />
               Submit WPR
+            </button>
+          )}
+          {canUploadSynopsis && (
+            <button
+              onClick={() => setShowSynopsisModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Synopsis
             </button>
           )}
           {isGuide && project.status === 'approved' && (
@@ -354,6 +460,66 @@ const ProjectDetails = () => {
                 >
                   <Send className="h-4 w-4 mr-2" />
                   Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Synopsis Upload Modal */}
+      {showSynopsisModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Upload Project Synopsis
+            </h2>
+            <form onSubmit={handleSynopsisUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Synopsis File
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleFileChange}
+                  className="input-field"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Accepted formats: PDF, DOC, DOCX, TXT (Max 5MB)
+                </p>
+              </div>
+
+              {synopsisFile && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    Selected: {synopsisFile.name}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Size: {(synopsisFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSynopsisModal(false);
+                    setSynopsisFile(null);
+                  }}
+                  className="flex-1 btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 btn-primary flex items-center justify-center"
+                  disabled={!synopsisFile}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
                 </button>
               </div>
             </form>
