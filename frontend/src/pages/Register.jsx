@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FileText, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import axios from 'axios';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -27,7 +28,10 @@ const Register = () => {
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
+    const { name, email, password, confirmPassword, role, semester, department, rollNo } = formData;
 
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
@@ -39,17 +43,30 @@ const Register = () => {
       return;
     }
 
+    try {
+      const response = await axios.post(`/api/auth/register`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    });
+    navigate("/login")
+    } catch (error) {
+      console.error('Registration error:', error.message);
+      toast.error(error.response?.data?.message || 'Registration failed');
+      return;
+    }
+    
+
     setLoading(true);
 
-    const { confirmPassword, ...registerData } = formData;
-    const result = await register(registerData);
+    // const result = await register(registerData);
 
-    if (result.success) {
-      toast.success('Account created successfully!');
-      navigate(result.data.role === 'student' ? '/student/dashboard' : '/teacher/dashboard');
-    } else {
-      toast.error(result.message);
-    }
+    // if (result.success) {
+    //   toast.success('Account created successfully!');
+    //   navigate(result.data.role === 'student' ? '/student/dashboard' : '/teacher/dashboard');
+    // } else {
+    //   toast.error(result.message);
+    // }
 
     setLoading(false);
   };
@@ -232,6 +249,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
+              onSubmit={handleSubmit}
               className="w-full btn-primary flex items-center justify-center"
             >
               {loading ? (

@@ -25,6 +25,7 @@ const Login = () => {
     setLoading(true);
 
     const result = await login(formData.email, formData.password);
+    console.log("Login result:", result);
 
     if (result.success) {
       toast.success(`Welcome back, ${result.data.name}!`);

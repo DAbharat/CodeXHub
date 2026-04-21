@@ -35,6 +35,17 @@ app.use(express.urlencoded({ extended: true }));
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  next();
+});
+
+app.use('/api', (req, res, next) => {
+  console.log('Request body:', req.body);
+  return res.json({ message: 'API is working', body: req.body }); 
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
@@ -61,8 +72,8 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+app.use((req, res, err) => {
+  res.status(404).json({ message: 'Route not found', err: err.message });
 });
 
 const PORT = process.env.PORT || 5000;
