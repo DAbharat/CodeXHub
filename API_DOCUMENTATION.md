@@ -41,7 +41,7 @@ Authorization: Bearer <your-jwt-token>
 
 ### POST /api/auth/register
 
-Register a new user (student or teacher).
+Register a new  user (student or teacher).
 
 **Body:**
 ```json
